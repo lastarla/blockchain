@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<script src="./sha256.js"></script>
+	</head>
+	<body>
+		
+	<script>
+
+		// data timeStamp hash previousHash
+		function Block(data, previousHash, timeStamp) {
+			previousHash = previousHash || '';
+			// timeStamp = timeStamp || new Date().getTime();
+			var date = new Date();
+			timeStamp = timeStamp || [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('-');
+
+			this.data = data;
+			this.timeStamp = timeStamp;
+			this.previousHash = previousHash;
+			this.hash = this.getHash();
+		}
+
+		Block.prototype.getHash = function () {
+			return sha256_digest(this.timeStamp + this.data);
+		};
+
+		function BlockChain() {
+			var me = this;
+
+			function createFirstBlock() {
+				me.chains.push(new Block('The first block!'));
+			}
+
+			me.chains = [];
+			createFirstBlock();
+		}
+
+		BlockChain.prototype.addBlock = function (data) {
+			var block = new Block(data, this.getLastChain().hash);
+
+			this.chains.push(block);
+		};
+
+		BlockChain.prototype.getLastChain = function () {
+			return this.chains[this.chains.length - 1];
+		};
+
+		BlockChain.prototype.validate = function () {
+			for (var i = 0; i < this.chains.length; i++) {
+				if (this.chains[i].hash !== this.chains[i].getHash()) {
+					console.log('被篡改：当前block被篡改，当前block的hash与hash计算结果不等', this.chains[i]);
+					return false;
+				}
+				else if (i > 0 && this.chains[i].previousHash !== this.chains[i - 1].hash) {
+					console.log('被篡改：上一block被篡改，当前block的previousHash与上一block的hash不等', this.chains[i - 1]);
+					return false;
+				}
+			}
+
+			return true;
+		};
+
+		var blockChain = new BlockChain();
+
+		blockChain.addBlock('The second block!');
+		blockChain.addBlock('hahaha');
+
+		// 篡改测试start
+		blockChain.chains[1].data = '123';
+		blockChain.chains[1].hash = 'ec6f0d94b0970f819ffdc1eff38d43364fa8a39e14a180048e490bd786399017';
+		blockChain.validate();
+		// 篡改测试end
+
+		console.log(blockChain);
+
+	</script>
+
+
+	</body>
+</html>
